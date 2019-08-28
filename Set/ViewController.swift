@@ -7,7 +7,6 @@
 //
 
 import UIKit
-
 extension UIButton {
     var isVisible: Bool {
         get {
@@ -45,10 +44,29 @@ class ViewController: UIViewController {
     var buttonToCard = [UIButton:Card]()
     var selectedButtons = Set<UIButton>()
     @IBAction func cardTouched(_ sender: UIButton) {
+        if selectedButtons.count == 3 && selectedButtons.contains(sender) {
+            var _card = selectedButtons.map {buttonToCard[$0]!}
+            if Card.isAMatch(a: _card[0], b: _card[1], c: _card[2]) {
+                game.removeCards(_card)
+                selectedButtons.forEach {$0.isClicked = false; $0.isVisible = false;$0.isPartOfMatch = true;}
+                if game.stackEmpty{dealButton.isEnabled = false; return}
+                dealButton.isEnabled = true
+                let newCards = game.dealNewCards()
+                for card in newCards {
+                    placeCard(card)
+                    print("arghhhh")
+                }
+                score += 5
+                selectedButtons.removeAll()
+            }
+            return
+        }
         if !sender.isVisible {
             return
         }
-        if selectedButtons.contains(sender) {
+        if selectedButtons.contains(sender){
+            print("Aahaha")
+            score -= 1
             // user clicks previously selected item - unselect
             sender.isClicked = false
             selectedButtons.remove(sender)
@@ -56,6 +74,7 @@ class ViewController: UIViewController {
         }
         if selectedButtons.count < 3 {
             sender.isClicked = true
+            sender.isPartOfMatch = false
             selectedButtons.insert(sender)
             if selectedButtons.count == 3 {
                 var _card = selectedButtons.map {buttonToCard[$0]!}
@@ -64,6 +83,8 @@ class ViewController: UIViewController {
                         $0.isSelected = false
                         $0.isPartOfMatch = true
                     }
+                    if game.stackEmpty{dealButton.isEnabled = false; return}
+                    dealButton.isEnabled = true
                 }
             }
             return
@@ -79,7 +100,14 @@ class ViewController: UIViewController {
         var _card = selectedButtons.map {buttonToCard[$0]!}
         if Card.isAMatch(a: _card[0], b: _card[1], c: _card[2]) {
             game.removeCards(_card)
-            selectedButtons.forEach {$0.isClicked = false; $0.isVisible = false;buttonToCard[$0] = nil;$0.backgroundColor = .green}
+            selectedButtons.forEach {$0.isClicked = false; $0.isVisible = false;$0.isPartOfMatch = true;}
+            if game.stackEmpty{dealButton.isEnabled = false; return}
+            dealButton.isEnabled = true
+            let newCards = game.dealNewCards()
+            for card in newCards {
+                placeCard(card)
+                print("arghhhh")
+            }
             score += 5
         } else {
             selectedButtons.forEach {$0.isClicked = false}
@@ -97,16 +125,35 @@ class ViewController: UIViewController {
             var _card = selectedButtons.map {buttonToCard[$0]!}
             if Card.isAMatch(a: _card[0], b: _card[1], c: _card[2]) {
                 game.removeCards(_card)
-                selectedButtons.forEach {$0.isClicked = false; $0.isVisible = false}
+                selectedButtons.forEach {$0.isClicked = false; $0.isVisible = false; $0.isPartOfMatch = true}
+                if game.stackEmpty {dealButton.isEnabled = false; return}
+                dealButton.isEnabled = true
                 let newCards = game.dealNewCards()
                 for card in newCards {
+                    print("Yay")
                     placeCard(card)
                 }
                 score += 5
+                selectedButtons.removeAll()
                 return
+            } else {
+                selectedButtons.forEach {$0.isClicked = false; $0.isVisible = true}
+                let newCards = game.dealNewCards()
+                if game.stackEmpty || game.cardsVisible.count == 24 {
+                    dealButton.isEnabled = false
+                    return
+                }
+                for card in newCards {
+                    placeCard(card)
+                    print("arghhhh")
+                }
+                selectedButtons.removeAll()
+                score -= 5
+                return
+
             }
         }
-        guard game.cards.count >= 3 else {
+        if game.stackEmpty || game.cardsVisible.count == 24 {
             dealButton.isEnabled = false
             return
         }
@@ -114,6 +161,11 @@ class ViewController: UIViewController {
         for card in newCards {
             placeCard(card)
         }
+        if game.stackEmpty || game.cardsVisible.count == 24 {
+            dealButton.isEnabled = false
+            return
+        }
+        
     }
     
     @IBOutlet weak var scoreLabel: UILabel!
@@ -122,7 +174,6 @@ class ViewController: UIViewController {
         reset()
         newGame()
     }
-    
     @IBAction func newGame(_ sender: UIButton) {
         reset()
         newGame()
@@ -133,6 +184,7 @@ class ViewController: UIViewController {
             if !button.isVisible {
                 button.setAttributedTitle(stringFor(card), for: UIControl.State.normal)
                 button.isVisible = true
+                button.isPartOfMatch = false
                 buttonToCard[button] = card
                 return
             }
@@ -149,10 +201,13 @@ class ViewController: UIViewController {
     }
     
     func reset() {
+        selectedButtons.removeAll()
         dealButton.isEnabled = true
+        dealButton.backgroundColor = .green
         for button in buttons {
             button.isVisible = false
             button.isClicked = false
+            button.isPartOfMatch = false
             button.backgroundColor = .white
         }
     }
