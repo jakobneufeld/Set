@@ -7,6 +7,8 @@
 //
 
 import Foundation
+/// The model for Set
+
 class Game {
     func removeCards(_ cards: [Card]) {
         cardsRemoved.append(contentsOf: cardsVisible.map {cardsVisible.remove(at: cardsVisible.firstIndex(of: $0)!)})
@@ -48,7 +50,7 @@ class Game {
         cards = []
         newGame(12)
     }
-    
+    var stackEmpty: Bool {return cards.isEmpty}
     func replaceNewCards(amount: Int) -> [Card] {
         var cardsReplace: [Card] = []
         for _ in 1...amount{
